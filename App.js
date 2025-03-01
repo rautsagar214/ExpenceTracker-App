@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function App() {
@@ -31,6 +30,8 @@ export default function App() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
   const categories = ["Food", "Transportation", "Entertainment", "Housing", "Utilities", "Other"];
@@ -137,18 +138,15 @@ export default function App() {
       <View style={styles.summaryContainer}>
         <View style={styles.filterContainer}>
           <Text style={styles.filterLabel}>Filter by:</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedFilter}
-              style={styles.picker}
-              onValueChange={(itemValue) => setSelectedFilter(itemValue)}
-            >
-              <Picker.Item label="All Categories" value="All" />
-              {categories.map(cat => (
-                <Picker.Item key={cat} label={cat} value={cat} />
-              ))}
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowFilterOptions(true)}
+          >
+            <Text style={styles.filterButtonText}>
+              {selectedFilter === 'All' ? 'All Categories' : selectedFilter}
+            </Text>
+            <Text style={styles.filterDropdownIcon}>▼</Text>
+          </TouchableOpacity>
         </View>
         
         <View style={styles.totalContainer}>
@@ -188,6 +186,59 @@ export default function App() {
         <Text style={styles.addButtonText}>+ Add Expense</Text>
       </TouchableOpacity>
       
+      {/* Filter Options Modal */}
+      <Modal
+        visible={showFilterOptions}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterOptions(false)}
+      >
+        <TouchableOpacity
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowFilterOptions(false)}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.filterModalTitle}>Select Category</Text>
+            <ScrollView>
+              <TouchableOpacity
+                style={styles.filterOption}
+                onPress={() => {
+                  setSelectedFilter('All');
+                  setShowFilterOptions(false);
+                }}
+              >
+                <Text style={[
+                  styles.filterOptionText,
+                  selectedFilter === 'All' && styles.selectedFilterText
+                ]}>
+                  All Categories
+                </Text>
+              </TouchableOpacity>
+              
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat}
+                  style={styles.filterOption}
+                  onPress={() => {
+                    setSelectedFilter(cat);
+                    setShowFilterOptions(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.filterOptionText,
+                    selectedFilter === cat && styles.selectedFilterText
+                  ]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      
+      {/* Add/Edit Expense Modal */}
       <Modal
         visible={isAddModalVisible}
         animationType="slide"
@@ -219,17 +270,13 @@ export default function App() {
               />
               
               <Text style={styles.inputLabel}>Category</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={category}
-                  style={styles.picker}
-                  onValueChange={(itemValue) => setCategory(itemValue)}
-                >
-                  {categories.map(cat => (
-                    <Picker.Item key={cat} label={cat} value={cat} />
-                  ))}
-                </Picker>
-              </View>
+              <TouchableOpacity
+                style={styles.categorySelector}
+                onPress={() => setShowCategoryPicker(true)}
+              >
+                <Text style={styles.categorySelectorText}>{category}</Text>
+                <Text style={styles.filterDropdownIcon}>▼</Text>
+              </TouchableOpacity>
               
               <Text style={styles.inputLabel}>Date</Text>
               <TouchableOpacity 
@@ -266,6 +313,43 @@ export default function App() {
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+      
+      {/* Category Picker Modal */}
+      <Modal
+        visible={showCategoryPicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCategoryPicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCategoryPicker(false)}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.filterModalTitle}>Select Category</Text>
+            <ScrollView>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat}
+                  style={styles.filterOption}
+                  onPress={() => {
+                    setCategory(cat);
+                    setShowCategoryPicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.filterOptionText,
+                    category === cat && styles.selectedFilterText
+                  ]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -307,16 +391,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 8,
   },
-  pickerContainer: {
+  filterButton: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 4,
-    overflow: 'hidden',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: 'white',
   },
-  picker: {
-    height: 40,
-    width: '100%',
+  filterButtonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  filterDropdownIcon: {
+    fontSize: 14,
+    color: '#666',
+  },
+  filterModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 20,
+  },
+  filterModalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    maxHeight: '80%',
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterOptionText: {
+    fontSize: 16,
+  },
+  selectedFilterText: {
+    color: '#3498db',
+    fontWeight: 'bold',
   },
   totalContainer: {
     backgroundColor: '#e8f4fd',
@@ -478,6 +604,18 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
+    fontSize: 16,
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+  },
+  categorySelectorText: {
     fontSize: 16,
   },
   modalButtons: {
